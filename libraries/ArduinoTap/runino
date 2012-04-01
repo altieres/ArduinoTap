@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.10.0;
+use 5.010;
 use strict;
 use warnings;
 
@@ -29,7 +29,7 @@ my $BAUDRATE = $ENV{BAUDRATE} || 9600;
 
 my $cfgfile = "$ARDUINO_DIR/hardware/arduino/boards.txt";
 open my $fh, '<', $cfgfile
-    or BAIL_OUT("Cannot open $cfgfile: $!");
+    or BAIL_OUT("Cannot open ${cfgfile}: $!");
 
 my $properties = Config::Properties->new();
 $properties->load($fh);
@@ -45,7 +45,7 @@ my $SPEED = $properties->getProperty("${BOARD}.upload.speed");
 my $PROTOCOL = $properties->getProperty("${BOARD}.upload.protocol");
 $PROTOCOL = 'stk500v1' if $PROTOCOL eq 'stk500';
 my $maxsize = $properties->getProperty("${BOARD}.upload.maximum_size");
-my $variant = $properties->getProperty("${BOARD}.build.variant", '');
+my $variant = $properties->getProperty("${BOARD}.build.variant", q{});
 
 
 my $ARDUINO_CORE = "${ARDUINO_DIR}/hardware/arduino/cores/arduino";
@@ -64,14 +64,20 @@ my @CPPFLAGS = (@CFLAGS, '-fno-exceptions');
 my @LDFLAGS = ('-Os', '-Wl,--gc-sections');
 my @LDLIBS = ('-lm');
 my @DEFINES = ("-DF_CPU=${F_CPU}", "-DARDUINO=${ARDUINO_REVISION}");
-my @INCLUDES = ("-I${ARDUINO_CORE}");
-push @INCLUDES, "-I${ARDUINO_VARIANT}" if $variant;
-my @CC = ($CC, "-mmcu=${MCU}", @CFLAGS, @DEFINES, @INCLUDES);
-my @CPP = ($CPP, "-mmcu=${MCU}", @CPPFLAGS, @DEFINES, @INCLUDES);
+my @INCL = ("-I${ARDUINO_CORE}");
+push @INCL, "-I${ARDUINO_VARIANT}" if $variant;
+my @CC = ($CC, "-mmcu=${MCU}", @CFLAGS, @DEFINES, @INCL);
+my @CPP = ($CPP, "-mmcu=${MCU}", @CPPFLAGS, @DEFINES, @INCL);
 my @LD = ($CC, "-mmcu=${MCU}", @LDLIBS, @LDFLAGS);
 my @AVRDUDE = ($AVRDUDE, "-C${AVRDUDE_CONF}", '-q', '-q', "-p${MCU}", "-c${PROTOCOL}", "-P${PORT}", "-b${SPEED}", '-D');
 
 my $build_dir = tempdir( CLEANUP => 1 );
+
+sub command {
+    system(@_) == 0
+        or BAIL_OUT("command failed ($?): @_");
+    return;
+}
 
 sub build {
     note("Building ... in ${build_dir}");
@@ -80,9 +86,9 @@ sub build {
 
     my $filename = "${build_dir}/${sketch_name}.cpp";
     open my $ofh, '>', $filename
-        or BAIL_OUT("Cannot open $filename: $!");
+        or BAIL_OUT("Cannot open ${filename}: $!");
     my $header = ($ARDUINO_REVISION < 100) ? 'WProgram.h' : 'Arduino.h';
-    print $ofh <<"HEADER";
+    print {$ofh} <<"HEADER";
 #include "$header"
 
 extern void setup();
@@ -91,10 +97,10 @@ extern void loop();
 #line 1 "$sketch"
 HEADER
     open my $ifh, '<', $sketch
-        or BAIL_OUT("Cannot open $sketch: $!");
+        or BAIL_OUT("Cannot open ${sketch}: $!");
     while (<$ifh>) {
-        print $ofh $_;
-        if (/#include\s+<(\S+)\.h>/) {;
+        print {$ofh} $_;
+        if (/\#include \s+ < (\S+)\.h >/xms) {;
             my $lib = $1;
             my $lib_dir = -d "../${lib}" ? "../${lib}" : "${ARDUINO_DIR}/libraries/${lib}";
             push @LIBS, $lib_dir;
@@ -106,102 +112,81 @@ HEADER
     close $ofh;
 
     my $obj = "${build_dir}/${sketch_name}.o";
-    my @cmd = (@CPP, @INCLUDES, '-c', $filename, '-o', $obj);
-    system(@cmd) == 0
-        or BAIL_OUT("system @cmd failed: $?");
+    command(@CPP, @INCLUDES, '-c', $filename, '-o', $obj);
     my @OBJS = ($obj);
 
     my $CORE_LIB = "${build_dir}/core.a";
-    unlink($CORE_LIB);
+    unlink $CORE_LIB;
 
-    for my $src (glob("${ARDUINO_CORE}/*.c")) {
+    for my $src (glob "${ARDUINO_CORE}/*.c") {
         my $basename = basename($src);
         $obj = "${build_dir}/${basename}.o";
-        my @cmd = (@CC, '-c', $src, '-o', $obj);
-        system(@cmd) == 0
-            or BAIL_OUT("system @cmd failed: $?");
-        @cmd = ($AR, 'rcs', $CORE_LIB, $obj);
-        system(@cmd) == 0
-            or BAIL_OUT("system @cmd failed: $?");
+        command(@CC, '-c', $src, '-o', $obj);
+        command($AR, 'rcs', $CORE_LIB, $obj);
     }
 
-    for my $src (glob("${ARDUINO_CORE}/*.cpp")) {
+    for my $src (glob "${ARDUINO_CORE}/*.cpp") {
         my $basename = basename($src);
         $obj = "${build_dir}/${basename}.o";
-        my @cmd = (@CPP, '-c', $src, '-o', $obj);
-        system(@cmd) == 0
-            or BAIL_OUT("system @cmd failed: $?");
-        @cmd = ($AR, 'rcs', $CORE_LIB, $obj);
-        system(@cmd) == 0
-            or BAIL_OUT("system @cmd failed: $?");
+        command(@CPP, '-c', $src, '-o', $obj);
+        command($AR, 'rcs', $CORE_LIB, $obj);
     }
 
     for my $lib_dir (@LIBS) {
-        for my $src (glob("${lib_dir}/*.c ${lib_dir}/utility/*.c")) {
+        for my $src (glob "${lib_dir}/*.c ${lib_dir}/utility/*.c") {
             my $basename = basename($src);
             $obj = "${build_dir}/${basename}.o";
-            my @cmd = (@CC, '-c', $src, '-o', $obj);
-            system(@cmd) == 0
-                or BAIL_OUT("system @cmd failed: $?");
+            command(@CC, '-c', $src, '-o', $obj);
             push @OBJS, $obj;
         }
-        for my $src (glob("${lib_dir}/*.cpp ${lib_dir}/utility/*.cpp")) {
+        for my $src (glob "${lib_dir}/*.cpp ${lib_dir}/utility/*.cpp") {
             my $basename = basename($src);
             $obj = "${build_dir}/${basename}.o";
-            my @cmd = (@CPP, '-c', $src, '-o', $obj);
-            system(@cmd) == 0
-                or BAIL_OUT("system @cmd failed: $?");
+            command(@CPP, '-c', $src, '-o', $obj);
             push @OBJS, $obj;
         }
     }
 
-    @cmd = (@LD, '-o', "${build_dir}/${sketch_name}.elf", @OBJS, $CORE_LIB, "-L${build_dir}");
-    system(@cmd) == 0
-        or BAIL_OUT("system @cmd failed: $?");
-
-    @cmd = ($OBJCOPY, '-Oihex', '-j.eeprom', '--set-section-flags=.eeprom=alloc,load', '--no-change-warnings', '--change-section-lma=.eeprom=0', "${build_dir}/${sketch_name}.elf", "${build_dir}/${sketch_name}.eep");
-    system(@cmd) == 0
-        or BAIL_OUT("system @cmd failed: $?");
-
-    @cmd = ($OBJCOPY, '-Oihex', '-R.eeprom', "${build_dir}/${sketch_name}.elf", "${build_dir}/${sketch_name}.hex");
-    system(@cmd) == 0
-        or BAIL_OUT("system @cmd failed: $?");
+    command(@LD, '-o', "${build_dir}/${sketch_name}.elf", @OBJS, $CORE_LIB, "-L${build_dir}");
+    command($OBJCOPY, '-Oihex', '-j.eeprom', '--set-section-flags=.eeprom=alloc,load', '--no-change-warnings', '--change-section-lma=.eeprom=0', "${build_dir}/${sketch_name}.elf", "${build_dir}/${sketch_name}.eep");
+    command($OBJCOPY, '-Oihex', '-R.eeprom', "${build_dir}/${sketch_name}.elf", "${build_dir}/${sketch_name}.hex");
 
     my $output = qx($SIZE --target=ihex ${build_dir}/${sketch_name}.hex);
-    my ($size) = $output =~ /\s+0\s+(\d+)\s+/;
+    my ($size) = $output =~ /\s+ 0 \s+ (\d+) \s+/xms;
     note("Binary sketch size: ${size} bytes (of a ${maxsize} byte maximum)");
-    BAIL_OUT("Sketch too big") if $size > $maxsize;
-    note("Done building");
+    BAIL_OUT('Sketch too big') if $size > $maxsize;
+    note('Done building');
+    return;
 }
 
 sub upload {
-    note("Uploading to board ...");
-    my @cmd = (@AVRDUDE, "-Uflash:w:${build_dir}/${sketch_name}.hex:i");
-    system(@cmd) == 0
-        or BAIL_OUT("system @cmd failed: $?");
-    note("Done uploading");
+    note('Uploading to board ...');
+    command(@AVRDUDE, "-Uflash:w:${build_dir}/${sketch_name}.hex:i");
+    note('Done uploading');
+    return;
 }
 
 sub run {
-    note("Running on board ...");
-    my $port = new Device::SerialPort($PORT);
+    note('Running on board ...');
+    my $port = Device::SerialPort->new($PORT);
     BAIL_OUT("Cannot open ${PORT}") unless $port;
 
     $port->baudrate($BAUDRATE);
     $port->read_const_time(5000); # ms
 
-    my $buf = '';
+    my $buf = q{};
     while (1) {
         my ($cnt, $str) = $port->read(1);
         last unless $cnt;
         print $str;
         $buf .= $str;
-        last if $buf =~ /# Done with ArduinoTap./;
+        last if $buf =~ /# Done with ArduinoTap\./ms;
     }
     print "\n";
 
     $port->close();
-    note("Done running");
+    note('Done running');
+    return;
 }
 
 build();
