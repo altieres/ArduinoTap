@@ -22,7 +22,7 @@ static const char *_todo_reason = NULL;
 #if defined(UBRRH) || defined(UBRR0H)
 static Stream *_out = &Serial;
 static Stream *_failure_out = &Serial;
-#elseif defined(ARDUINO)
+#elif defined(ARDUINO)
 static Stream *_out = NULL;
 static Stream *_failure_out = NULL;
 #else
