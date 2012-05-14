@@ -18,11 +18,11 @@ static int _todo_upto = -1;
 static const char *_todo_reason = NULL;
 
 #if defined(UBRRH) || defined(UBRR0H)
-static Print *_out = &Serial;
-static Print *_failure_out = &Serial;
+static Stream *_out = &Serial;
+static Stream *_failure_out = &Serial;
 #else
-static Print *_out = NULL;
-static Print *_failure_out = NULL;
+static Stream *_out = NULL;
+static Stream *_failure_out = NULL;
 #endif
 
 
@@ -33,6 +33,7 @@ int plan() {
 static inline void not_yet_plan() {
     if (_have_plan) {
         _failure_out->println("You tried to plan twice");
+        _failure_out->flush();
         exit(-1);
     }
 }
@@ -43,6 +44,7 @@ void plan(int nb) {
         _failure_out->print("Number of tests must be a positive integer.  You gave it '");
         _failure_out->print(nb);
         _failure_out->println("'.");
+        _failure_out->flush();
         exit(-1);
     }
     _out->print("1..");
@@ -63,11 +65,14 @@ void skip_all(const char *const reason) {
     _out->print("1..0 # SKIP ");
     _out->println(reason);
     _have_output_plan = true;
+    _out->flush();
     exit(0);
 }
 
 void done_testing() {
     done_testing(_curr_test);
+    _out->flush();
+    exit(0);
 }
 
 void done_testing(int nb) {
@@ -104,12 +109,14 @@ void bail_out(const char *const reason) {
         _out->print(reason);
     }
     _out->println();
+    _out->flush();
     exit(-1);
 }
 
 static inline void need_plan() {
     if (! _have_plan) {
         _failure_out->println("You tried to run a test without a plan");
+        _failure_out->flush();
         exit(-1);
     }
 }
@@ -189,12 +196,12 @@ void diag(const char *const msg) {
     _out->println(msg);
 }
 
-void output(Print &out) {
+void output(Stream &out) {
     _out = &out;
     _failure_out = &out;
 }
 
-Print &output() {
+Stream &output() {
     return *_out;
 }
 

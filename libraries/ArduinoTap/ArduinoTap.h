@@ -2,7 +2,7 @@
 #ifndef ArduinoTap_h
 #define ArduinoTap_h
 
-#include <Print.h>
+#include <Stream.h>
 
 
 extern void plan(int nb);
@@ -18,8 +18,8 @@ extern void skip(const char *const reason=NULL, int count=1);
 extern void todo_skip(const char *const reason=NULL);
 extern void skip_rest(const char *const reason=NULL);
 extern void diag(const char *const msg);
-extern void output(Print &out);
-extern Print &output();
+extern void output(Stream &out);
+extern Stream &output();
 extern bool is_passing();
 
 #define ok(test, ...)                   _ok((test), __FILE__, __LINE__, ##__VA_ARGS__)
@@ -31,7 +31,7 @@ extern bool is_passing();
         bool e = (got) == (expected); \
         _ok(e, __FILE__, __LINE__, ##__VA_ARGS__); \
         if (! e) { \
-            Print &out = output(); \
+            Stream &out = output(); \
             out.print("#         got: "); \
             out.println(got); \
             out.print("#    expected: "); \
@@ -43,7 +43,7 @@ extern bool is_passing();
         bool e = (got) != (expected); \
         _ok(e, __FILE__, __LINE__, ##__VA_ARGS__); \
         if (! e) { \
-            Print &out = output(); \
+            Stream &out = output(); \
             out.print("#         got: "); \
             out.println(got); \
             out.println("#    expected: anything else"); \
