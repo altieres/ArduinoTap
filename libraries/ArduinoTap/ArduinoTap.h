@@ -2,7 +2,28 @@
 #ifndef ArduinoTap_h
 #define ArduinoTap_h
 
+#ifdef ARDUINO
 #include <Stream.h>
+#else
+#include <cstdlib>
+#include <iostream>
+class Stream
+{
+  public:
+    inline void print(const char s[]) { std::cout << s; }
+    inline void print(char c) { std::cout << c; }
+    inline void print(int i) { std::cout << i; }
+    inline void print(double d) { std::cout << d; }
+
+    inline void println(const char s[]) { std::cout << s << std::endl; }
+    inline void println(char c) { std::cout << c << std::endl; }
+    inline void println(int i) { std::cout << i << std::endl; }
+    inline void println(double d) { std::cout << d << std::endl; }
+    inline void println() { std::cout << std::endl; }
+
+    inline void flush() { std::cout << std::flush; }
+};
+#endif
 
 
 extern void plan(int nb);

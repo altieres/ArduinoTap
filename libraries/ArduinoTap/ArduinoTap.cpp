@@ -1,8 +1,10 @@
 
-#if defined(ARDUINO) && ARDUINO >= 100
+#ifdef ARDUINO
+#if ARDUINO >= 100
 #include "Arduino.h"
 #else
 #include "WProgram.h"
+#endif
 #endif
 #include "ArduinoTap.h"
 
@@ -20,9 +22,13 @@ static const char *_todo_reason = NULL;
 #if defined(UBRRH) || defined(UBRR0H)
 static Stream *_out = &Serial;
 static Stream *_failure_out = &Serial;
-#else
+#elseif defined(ARDUINO)
 static Stream *_out = NULL;
 static Stream *_failure_out = NULL;
+#else
+static Stream Console;
+static Stream *_out = &Console;
+static Stream *_failure_out = &Console;
 #endif
 
 
