@@ -26,9 +26,10 @@ static Stream *_failure_out = &Serial;
 static Stream *_out = NULL;
 static Stream *_failure_out = NULL;
 #else
-static Stream Console;
-static Stream *_out = &Console;
-static Stream *_failure_out = &Console;
+static Stream Cout(std::cout);
+static Stream Cerr(std::cerr);
+static Stream *_out = &Cout;
+static Stream *_failure_out = &Cerr;
 #endif
 
 
@@ -38,6 +39,7 @@ int plan() {
 
 static inline void not_yet_plan() {
     if (_have_plan) {
+        _out->flush();
         _failure_out->println("You tried to plan twice");
         _failure_out->flush();
         exit(-1);
@@ -47,6 +49,7 @@ static inline void not_yet_plan() {
 void plan(int nb) {
     not_yet_plan();
     if (nb < 0) {
+        _out->flush();
         _failure_out->print("Number of tests must be a positive integer.  You gave it '");
         _failure_out->print(nb);
         _failure_out->println("'.");
@@ -121,6 +124,7 @@ void bail_out(const char *const reason) {
 
 static inline void need_plan() {
     if (! _have_plan) {
+        _out->flush();
         _failure_out->println("You tried to run a test without a plan");
         _failure_out->flush();
         exit(-1);
@@ -204,11 +208,18 @@ void diag(const char *const msg) {
 
 void output(Stream &out) {
     _out = &out;
-    _failure_out = &out;
 }
 
 Stream &output() {
     return *_out;
+}
+
+void failure_output(Stream &out) {
+    _failure_out = &out;
+}
+
+Stream &failure_output() {
+    return *_failure_out;
 }
 
 bool is_passing() {

@@ -10,18 +10,22 @@
 class Stream
 {
   public:
-    inline void print(const char s[]) { std::cout << s; }
-    inline void print(char c) { std::cout << c; }
-    inline void print(int i) { std::cout << i; }
-    inline void print(double d) { std::cout << d; }
+    Stream (std::ostream& _os) { os = &_os; }
+    ~Stream () {}
+    inline void print(const char s[]) { *os << s; }
+    inline void print(char c) { *os << c; }
+    inline void print(int i) { *os << i; }
+    inline void print(double d) { *os << d; }
 
-    inline void println(const char s[]) { std::cout << s << std::endl; }
-    inline void println(char c) { std::cout << c << std::endl; }
-    inline void println(int i) { std::cout << i << std::endl; }
-    inline void println(double d) { std::cout << d << std::endl; }
-    inline void println() { std::cout << std::endl; }
+    inline void println(const char s[]) { *os << s << std::endl; }
+    inline void println(char c) { *os << c << std::endl; }
+    inline void println(int i) { *os << i << std::endl; }
+    inline void println(double d) { *os << d << std::endl; }
+    inline void println() { *os << std::endl; }
 
-    inline void flush() { std::cout << std::flush; }
+    inline void flush() { os->flush(); }
+  private:
+    std::ostream* os;
 };
 #endif
 
@@ -41,6 +45,8 @@ extern void skip_rest(const char *const reason=NULL);
 extern void diag(const char *const msg);
 extern void output(Stream &out);
 extern Stream &output();
+extern void failure_output(Stream &out);
+extern Stream &failure_output();
 extern bool is_passing();
 
 #define ok(test, ...)                   _ok((test), __FILE__, __LINE__, ##__VA_ARGS__)
