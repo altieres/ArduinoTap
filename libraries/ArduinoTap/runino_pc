@@ -1,0 +1,147 @@
+#!/usr/bin/env perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use File::Basename;
+use File::Temp qw(tempdir);
+use Pod::Usage;
+use Test::More;
+
+pod2usage( {
+    -exitval    => 1,
+    -verbose    => 99,
+    -sections   => 'SYNOPSIS|DESCRIPTION|ENVIRONMENT VARIABLES',
+} ) unless @ARGV == 1;
+
+my $sketch = $ARGV[0];
+my $sketch_name = basename($sketch);
+
+my $ARDUINO_DIR = $ENV{ARDUINO_DIR} || '/usr/share/arduino';
+
+my $CC = 'gcc';
+my $CPP = 'g++';
+my $AR = 'ar';
+my $CWARN = '-Wall';
+my @CFLAGS = ('-g', '-O2', $CWARN);
+my @CPPFLAGS = (@CFLAGS, '-fno-exceptions');
+my @LDFLAGS = ();
+my @LDLIBS = ();
+my @DEFINES = ();
+my @INCL = ();
+my @CC = ($CC, @CFLAGS, @DEFINES, @INCL);
+my @CPP = ($CPP, @CPPFLAGS, @DEFINES, @INCL);
+my @LD = ($CPP, @LDLIBS, @LDFLAGS);
+
+my $build_dir = tempdir( CLEANUP => 1 );
+
+sub command {
+    system(@_) == 0
+        or BAIL_OUT("command failed ($?): @_");
+    return;
+}
+
+sub build {
+    note("Building ... in ${build_dir}");
+    my @LIBS;
+    my @INCLUDES;
+
+    my $filename = "${build_dir}/${sketch_name}.cpp";
+    open my $ofh, '>', $filename
+        or BAIL_OUT("Cannot open ${filename}: $!");
+    print {$ofh} <<"HEADER";
+extern void setup();
+extern void loop();
+
+int main(void)
+{
+    setup();
+
+    for (;;) {
+        loop();
+    }
+
+    return 0;
+}
+
+#line 1 "$sketch"
+HEADER
+    open my $ifh, '<', $sketch
+        or BAIL_OUT("Cannot open ${sketch}: $!");
+    while (<$ifh>) {
+        print {$ofh} $_;
+        if (/\#include \s+ < (\S+)\.h >/xms) {;
+            my $lib = $1;
+            my $lib_dir = -d "../${lib}" ? "../${lib}" : "${ARDUINO_DIR}/libraries/${lib}";
+            push @LIBS, $lib_dir;
+            push @INCLUDES, "-I${lib_dir}";
+            push @INCLUDES, "-I${lib_dir}/utility" if -d "${lib_dir}/utility";
+        }
+    }
+    close $ifh;
+    close $ofh;
+
+    my $obj = "${build_dir}/${sketch_name}.o";
+    command(@CPP, @INCLUDES, '-c', $filename, '-o', $obj);
+    my @OBJS = ($obj);
+
+    for my $lib_dir (@LIBS) {
+        for my $src (glob "${lib_dir}/*.c ${lib_dir}/utility/*.c") {
+            my $basename = basename($src);
+            $obj = "${build_dir}/${basename}.o";
+            command(@CC, '-c', $src, '-o', $obj);
+            push @OBJS, $obj;
+        }
+        for my $src (glob "${lib_dir}/*.cpp ${lib_dir}/utility/*.cpp") {
+            my $basename = basename($src);
+            $obj = "${build_dir}/${basename}.o";
+            command(@CPP, '-c', $src, '-o', $obj);
+            push @OBJS, $obj;
+        }
+    }
+
+    command(@LD, '-o', "${build_dir}/${sketch_name}", @OBJS, "-L${build_dir}");
+    note('Done building');
+    return;
+}
+
+sub run {
+    note('Running ...');
+    system("${build_dir}/${sketch_name}");
+    note('Done running');
+    return;
+}
+
+build();
+run();
+
+__END__
+
+=head1 NAME
+
+runino_pc - build/run a sketch on PC
+
+=head1 SYNOPSIS
+
+    ./runino_pc sketch.ino
+
+or with C<prove>
+
+    prove --exec=./runino_pc tests/*/*.ino
+
+=head1 DESCRIPTION
+
+B<runino_pc> allows to build/run an Arduino sketch on a PC.
+
+=head1 ENVIRONMENT VARIABLES
+
+=over
+
+=item ARDUINO_DIR
+
+The default value is C</usr/share/arduino>.
+
+=back
+
+=cut
