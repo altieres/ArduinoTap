@@ -1,7 +1,9 @@
 #include <ArduinoTap.h>
 
 void setup() {
+#ifdef ARDUINO
   Serial.begin(9600);
+#endif
 }
 
 void loop() {
@@ -9,8 +11,6 @@ void loop() {
   ok(true);
   ok(1, "foo");
   done_testing();
-
-  for (;;) {}
 }
 
 

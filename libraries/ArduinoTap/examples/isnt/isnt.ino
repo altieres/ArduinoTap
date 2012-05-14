@@ -1,7 +1,9 @@
 #include <ArduinoTap.h>
 
 void setup() {
+#ifdef ARDUINO
   Serial.begin(9600);
+#endif
 }
 
 void loop() {
@@ -13,8 +15,6 @@ void loop() {
   isnt(42, 42,  "equals");
 
   done_testing();
-
-  for (;;) {}
 }
 
 

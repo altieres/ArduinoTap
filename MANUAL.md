@@ -26,8 +26,6 @@ Running Tests
       nok(0, "0 is false");
       is(1 + 1, 2, "addition");
       done_testing();
-
-      for (;;); // DON'T LOOP
     }
 
 With `runino` :
