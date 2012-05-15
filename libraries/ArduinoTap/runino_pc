@@ -108,7 +108,7 @@ HEADER
 
 sub run {
     note('Running ...');
-    system("${build_dir}/${sketch_name}");
+    system "${build_dir}/${sketch_name}";
     note('Done running');
     return;
 }
