@@ -10,6 +10,7 @@ void loop() {
   no_plan();
   ok(true, "foo");
   done_testing(1);
+  exit(0);
 }
 
 
