@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use File::Basename;
+use File::HomeDir;
 use File::Temp qw(tempdir);
 use Pod::Usage;
 use Test::More;
@@ -19,6 +20,7 @@ my $sketch = $ARGV[0];
 my $sketch_name = basename($sketch);
 
 my $ARDUINO_DIR = $ENV{ARDUINO_DIR} || '/usr/share/arduino';
+my $SKETCHBOOK_DIR = $ENV{SKETCHBOOK_DIR} || File::HomeDir->my_home . '/sketchbook';
 
 my $CC = 'gcc';
 my $CPP = 'g++';
@@ -73,7 +75,12 @@ HEADER
         print {$ofh} $_;
         if (/\#include \s+ < (\S+)\.h >/xms) {;
             my $lib = $1;
-            my $lib_dir = -d "../${lib}" ? "../${lib}" : "${ARDUINO_DIR}/libraries/${lib}";
+            my $lib_dir = -d "../${lib}"
+                        ? "../${lib}"
+                        : -d "${SKETCHBOOK_DIR}/libraries/${lib}"
+                        ? "${SKETCHBOOK_DIR}/libraries/${lib}"
+                        : "${ARDUINO_DIR}/libraries/${lib}";
+            warn "library ${lib} not found\n" unless -d $lib_dir;
             push @LIBS, $lib_dir;
             push @INCLUDES, "-I${lib_dir}";
             push @INCLUDES, "-I${lib_dir}/utility" if -d "${lib_dir}/utility";
@@ -141,6 +148,10 @@ B<runino_pc> allows to build/run an Arduino sketch on a PC.
 =item ARDUINO_DIR
 
 The default value is C</usr/share/arduino>.
+
+=item SKETCHBOOK_DIR
+
+The default value is C<~/sketchbook>.
 
 =back
 
