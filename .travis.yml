@@ -1,0 +1,17 @@
+language: c
+compiler: gcc
+
+# Tool setup.
+install:
+  - sudo apt-get install -qq libfile-homedir-perl
+
+# Ttest.
+script:
+  - cd libraries/ArduinoTap
+  - prove --exec=./runino_pc examples/manual/*.ino
+  - prove --exec=./runino_pc examples/diag/*.ino examples/is*/*.ino examples/*ok/*.ino examples/no_plan/*.ino examples/pass/*.ino examples/skip*/*.ino examples/todo/*.ino
+
+branches:
+  only:
+    - master
+
