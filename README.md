@@ -2,6 +2,8 @@
 ArduinoTap : an Unit Testing library
 ====================================
 
+[![Build Status](https://travis-ci.org/fperrad/ArduinoTap.png)](https://travis-ci.org/fperrad/ArduinoTap)
+
 Introduction
 ------------
 
