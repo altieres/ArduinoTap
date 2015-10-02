@@ -10,7 +10,7 @@
 class Stream
 {
   public:
-    explicit Stream(std::ostream& _os) { os = &_os; }
+    explicit Stream(std::ostream& _os) : os(&_os) {}
     ~Stream() {}
     inline void print(const char s[]) { *os << s; }
     inline void print(const char c) { *os << c; }
@@ -27,7 +27,7 @@ class Stream
   private:
     Stream();
     Stream(const Stream&);
-    std::ostream* os;
+    std::ostream * const os;
 };
 #endif
 
