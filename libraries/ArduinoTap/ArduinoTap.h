@@ -25,6 +25,8 @@ class Stream
 
     inline void flush() { os->flush(); }
   private:
+    Stream();
+    Stream(const Stream&);
     std::ostream* os;
 };
 #endif
