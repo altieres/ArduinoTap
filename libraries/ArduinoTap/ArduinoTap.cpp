@@ -46,7 +46,7 @@ static inline void not_yet_plan() {
     }
 }
 
-void plan(int nb) {
+void plan(const int nb) {
     not_yet_plan();
     if (nb < 0) {
         _out->flush();
@@ -84,7 +84,7 @@ void done_testing() {
     exit(0);
 }
 
-void done_testing(int nb) {
+void done_testing(const int nb) {
     if (_done_testing) {
         _out->println("done_testing() was already called");
     }
@@ -164,12 +164,12 @@ void _ok(const bool test, const char *const file, const int line, const char *co
     }
 }
 
-void todo(const char *const reason, int count) {
+void todo(const char *const reason, const int count) {
     _todo_upto = _curr_test + count;
     _todo_reason = reason;
 }
 
-void skip(const char *const reason, int count) {
+void skip(const char *const reason, const int count) {
     need_plan();
     for (int i = 0; i < count; i++) {
         ++_curr_test;

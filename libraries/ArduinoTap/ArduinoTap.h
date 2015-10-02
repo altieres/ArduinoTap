@@ -13,14 +13,14 @@ class Stream
     Stream (std::ostream& _os) { os = &_os; }
     ~Stream () {}
     inline void print(const char s[]) { *os << s; }
-    inline void print(char c) { *os << c; }
-    inline void print(int i) { *os << i; }
-    inline void print(double d) { *os << d; }
+    inline void print(const char c) { *os << c; }
+    inline void print(const int i) { *os << i; }
+    inline void print(const double d) { *os << d; }
 
     inline void println(const char s[]) { *os << s << std::endl; }
-    inline void println(char c) { *os << c << std::endl; }
-    inline void println(int i) { *os << i << std::endl; }
-    inline void println(double d) { *os << d << std::endl; }
+    inline void println(const char c) { *os << c << std::endl; }
+    inline void println(const int i) { *os << i << std::endl; }
+    inline void println(const double d) { *os << d << std::endl; }
     inline void println() { *os << std::endl; }
 
     inline void flush() { os->flush(); }
@@ -30,16 +30,16 @@ class Stream
 #endif
 
 
-extern void plan(int nb);
+extern void plan(const int nb);
 extern int plan(void);
 extern void no_plan(void);
 extern void skip_all(const char *const reason);
 extern void done_testing(void);
-extern void done_testing(int nb);
+extern void done_testing(const int nb);
 extern void bail_out(const char *const reason=NULL);
 extern void _ok(bool test, const char *const file, int line, const char *const name=NULL);
-extern void todo(const char *const reason=NULL, int count=1);
-extern void skip(const char *const reason=NULL, int count=1);
+extern void todo(const char *const reason=NULL, const int count=1);
+extern void skip(const char *const reason=NULL, const int count=1);
 extern void todo_skip(const char *const reason=NULL);
 extern void skip_rest(const char *const reason=NULL);
 extern void diag(const char *const msg);
