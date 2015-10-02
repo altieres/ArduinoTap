@@ -10,8 +10,8 @@
 class Stream
 {
   public:
-    Stream (std::ostream& _os) { os = &_os; }
-    ~Stream () {}
+    explicit Stream(std::ostream& _os) { os = &_os; }
+    ~Stream() {}
     inline void print(const char s[]) { *os << s; }
     inline void print(const char c) { *os << c; }
     inline void print(const int i) { *os << i; }
