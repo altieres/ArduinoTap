@@ -23,7 +23,7 @@ class Stream
     inline void println(const double d) { *os << d << std::endl; }
     inline void println() { *os << std::endl; }
 
-    inline void flush() { os->flush(); }
+    inline void flush() { (void)os->flush(); }
   private:
     Stream();
     Stream(const Stream&);
