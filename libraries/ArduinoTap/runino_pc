@@ -53,8 +53,8 @@ sub build {
     open my $ofh, '>', $filename
         or BAIL_OUT("Cannot open ${filename}: $!");
     print {$ofh} <<"HEADER";
-extern void setup();
-extern void loop();
+static void setup(void);
+static void loop(void);
 
 int main(void)
 {
@@ -63,8 +63,6 @@ int main(void)
     for (;;) {
         loop();
     }
-
-    return 0;
 }
 
 #line 1 "$sketch"
