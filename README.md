@@ -44,7 +44,7 @@ Installation
 Copyright and License
 ---------------------
 
-Copyright 2011-2012 Francois Perrad
+Copyright 2011-2015 Francois Perrad
 
 This library is licensed under the terms of the Artistic License 2.0, like Perl.
 
