@@ -56,7 +56,7 @@ Now, with `prove` :
     Result: PASS
 
 If your continuous integration tool (for example, [Jenkins](http://jenkins-ci.org/))
-requires the JUnix XML format.
+requires the JUnit XML format.
 
     $ prove --formatter=TAP::Formatter::JUnit --exec=runino examples/manual/manual.ino
     <testsuites>
