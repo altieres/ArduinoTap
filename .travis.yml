@@ -1,11 +1,12 @@
 language: c
+sudo: false
 compiler: gcc
 
-# Tool setup.
-install:
-  - sudo apt-get install -qq libfile-homedir-perl
+addons:
+  apt:
+    packages:
+    - libfile-homedir-perl
 
-# Ttest.
 script:
   - cd libraries/ArduinoTap
   - prove --exec=./runino_pc examples/manual/*.ino
