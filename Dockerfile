@@ -9,14 +9,18 @@
 FROM ubuntu:latest
 
 RUN apt update && \
-  apt install -y --no-install-recommends perl g++ arduino-mk && \
+  apt install -y --no-install-recommends perl g++ arduino-mk libgtest-dev cmake && \
   rm -rf /var/lib/apt/lists/*
 
 RUN cpan Config::Properties Device::SerialPort File::Which File::HomeDir
 
 COPY . /tmp/runino
 WORKDIR /tmp/runino
-
 RUN make install
+
+WORKDIR /usr/src/gtest
+RUN cmake CMakeLists.txt
+RUN make
+RUN cp *.a /usr/lib
 
 WORKDIR /data
